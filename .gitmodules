@@ -1,0 +1,3 @@
+[submodule "secret"]
+	path = secret
+	url = gitolite-ipfsio:albus/juelich/ipfs_io/secret
