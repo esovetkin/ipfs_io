@@ -8,6 +8,8 @@ function set_defaults {
     docker_maxmemory=$(echo "scale=2; $(grep MemTotal /proc/meminfo | awk '{print $2}')/1024/1024*0.2" \
                            | bc | awk '{printf "%.2f", $0}')"g"
     what="start"
+    bootstrap_ip=""
+    bootstrap_id=""
     ifdry="no"
     ifrestart="yes"
     storage_mnt="$(realpath ./ipfs_storage)"
@@ -29,6 +31,14 @@ function print_help {
     echo
     echo "  --what            what to run. Either: start, stop, genkey"
     echo "                    Default: \"${what}\""
+    echo
+    echo "  --bootstrap-ip    ip address of a node to bootstrap from"
+    echo "                    Leave empty if the first node."
+    echo "                    Default: \"${bootstrap_ip}\""
+    echo
+    echo "  --bootstrap-id    libp2p id of a node to bootstrap from"
+    echo "                    Leave empty if the first node."
+    echo "                    Default: \"${bootstrap_id}\""
     echo
     echo "  --maxmemory       hard limit on memory"
     echo "                    Default: \"${docker_maxmemory}\""
@@ -73,6 +83,14 @@ function parse_args {
                 ;;
             --what=*)
                 what="${i#*=}"
+                shift
+                ;;
+            --bootstrap-ip=*)
+                bootstrap_ip="${i#*=}"
+                shift
+                ;;
+            --bootstrap-id=*)
+                bootstrap_id="${i#*=}"
                 shift
                 ;;
             --maxmemory=*)
@@ -187,6 +205,12 @@ function start_ipfs_cluster {
     ipaddress=$(get_ip "${network_interface}")
     cluster_secret=$(jq -r '.cluster.secret' "${ipfs_cluster_servicejson}")
 
+    clusterargs=""
+    if [ ! -z "${bootstrap_ip}" ]
+    then
+        clusterargs="daemon --bootstrap /ip4/${bootstrap_ip}/tcp/9096/p2p/${bootstrap_id}"
+    fi
+
     docommand=""
     docommand+=$(echo mkdir -p "${ipfs_cluster_config}")"; "
     docommand+=$(echo docker run -d \
@@ -198,7 +222,8 @@ function start_ipfs_cluster {
                       -e "CLUSTER_IPFSHTTP_NODEMULTIADDRESS=/ip4/${ipaddress}/tcp/5001" \
                       -p "${ipaddress}:9096:9096" \
                       -p "${ipaddress}:9094:9094" \
-                      ipfs/ipfs-cluster:latest)
+                      ipfs/ipfs-cluster:latest \
+                      ${clusterargs})
     echo "${docommand}"
 }
 
