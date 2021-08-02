@@ -217,6 +217,7 @@ function start_ipfs_cluster {
                       --name ipfs_cluster \
                       --memory "${docker_maxmemory}" \
                       $(get_restart) \
+                      -v "${ipfs_cluster_config}:/data/ipfs-cluster" \
                       -e "CLUSTER_SECRET=${cluster_secret}" \
                       -e "CLUSTER_RESTAPI_HTTPLISTENMULTIADDRESS=/ip4/0.0.0.0/tcp/9094" \
                       -e "CLUSTER_IPFSHTTP_NODEMULTIADDRESS=/ip4/${ipaddress}/tcp/5001" \
