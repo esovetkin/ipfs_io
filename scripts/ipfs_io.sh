@@ -7,6 +7,7 @@ function set_defaults {
     network_interface="pi0"
     docker_maxmemory=$(echo "scale=2; $(grep MemTotal /proc/meminfo | awk '{print $2}')/1024/1024*0.2" \
                            | bc | awk '{printf "%.2f", $0}')"g"
+    what="start"
     ifdry="no"
     ifrestart="yes"
     storage_mnt="$(realpath ./ipfs_storage)"
@@ -26,8 +27,11 @@ function print_help {
     echo
     echo "  -d,--dry          just echo command, do not execute"
     echo
+    echo "  --what            what to run. Either: start, stop, genkey"
+    echo "                    Default: \"${what}\""
+    echo
     echo "  --maxmemory       hard limit on memory"
-    echo "                    Default: ${docker_maxmemory}"
+    echo "                    Default: \"${docker_maxmemory}\""
     echo
     echo "  --network         network interface where to bind ports"
     echo "                    Empty for all. Default: \"${network_interface}\""
@@ -48,10 +52,10 @@ function print_help {
     echo "                    Default: \"${ipfs_cluster_servicejson}\""
     echo
     echo "  --ipfs-profile    IPFS profile. See https://docs.ipfs.io/how-to/default-profile/#available-profiles"
-    echo "                    Default: \"ipfs_profile\""
+    echo "                    Default: \"${ipfs_profile}\""
     echo
     echo "  --ipfs-swarmkey   IPFS swarm key file path."
-    echo "                    Default: ipfs_swarmkey"
+    echo "                    Default: \"${ipfs_swarmkey}\""
     echo
 }
 
@@ -66,6 +70,10 @@ function parse_args {
                 ;;
             -d|--dry)
                 ifdry="yes"
+                ;;
+            --what=*)
+                what="${i#*=}"
+                shift
                 ;;
             --maxmemory=*)
 		        docker_maxmemory="${i#*=}"
@@ -198,16 +206,31 @@ function start_ipfs_cluster {
 set_defaults
 parse_args $@
 
-# determine the docommand
-prune_byname ipfs_cluster
-prune_byname ipfs
-docommand=""
-docommand+=$(start_ipfs)"; "
-docommand+=$(start_ipfs_cluster)"; "
+case "${what}" in
+    start)
+        # determine the docommand
+        prune_byname ipfs_cluster
+        prune_byname ipfs
+        docommand=""
+        docommand+=$(start_ipfs)"; "
+        docommand+=$(start_ipfs_cluster)"; "
+        ;;
+    stop)
+        docommand="docker kill ipfs ipfs_cluster"
+        ;;
+    genkey)
+        echo -e "/key/swarm/psk/1.0.0/\n/base16/\n`tr -dc 'a-f0-9' < /dev/urandom | head -c64`" \
+             > "${ipfs_swarmkey}"
+        ;;
+    *)
+      echo "unknown value of --what!"
+      exit
+      ;;
+esac
 
 if [ "yes" = "${ifdry}" ]
 then
-    echo ${docommand}
+    echo ${docommand} | tr ';' '\n'
     exit 0
 fi
 
