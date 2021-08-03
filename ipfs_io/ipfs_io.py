@@ -51,7 +51,10 @@ def download_ipfs(ipfs_cid, ofn, ip='127.0.0.1', port='5001'):
     _run_command(cmd)
 
 
-def upload_ipfs(ifn, ip='127.0.0.1', port='9094'):
+def upload_ipfs(ifn, ip='127.0.0.1', port='9094',
+                iflocal = True,
+                rmin = 0, rmax = 0,
+                expirein = None):
     """Upload a file to ipfs-cluster
 
     :ifn: path to a file to upload
@@ -60,12 +63,37 @@ def upload_ipfs(ifn, ip='127.0.0.1', port='9094'):
 
     :port: port of API of ipfs-cluster daemon
 
+    :iflocal: sets --local flags that makes upload lazy
+
+    :rmin,rmax: minimum and maximum replication factor. 0 uses default
+    value set in ipfs-cluster
+
+    :expirein: amount of hours after which pin is expired
+
     :return: ipfs_cid of the uploaded file
+
     """
+    args = []
+
+    if expirein is not None:
+        args += ['--expire-in',
+                 '{}h'.format(expirein)]
+
+    if iflocal:
+        args += ['--local']
+
+    if rmin:
+        args += ['--rmin',str(rmin)]
+
+    if rmax:
+        args += ['--rmax',str(rmax)]
+
     cmd = ['ipfs-cluster-ctl',
            '--host','/ip4/{ip}/tcp/{port}'\
            .format(ip=ip, port=port),
-           'add', ifn]
+           'add']
+    cmd += args
+    cmd += [ifn]
     return _run_command(cmd).split()[1]
 
 
