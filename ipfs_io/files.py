@@ -27,12 +27,16 @@ class IPFS_Files(Cassandra_Base):
 
     """
 
-    def __init__(self, ipfs_ip, keyspace_suffix='', **kwargs):
+    def __init__(self, ipfs_ip, keyspace_suffix='',
+                 timeout = 120,
+                 **kwargs):
         """
         :keyspace_suffix: suffix of the keyspace
 
         :ipfs_ip: an ip address where ipfs/ipfs_cluster can be
         reached
+
+        :timeout: cluster session default_timeout
 
         :kwargs: arguments passed to cassandra_base
         """
@@ -43,6 +47,7 @@ class IPFS_Files(Cassandra_Base):
 
         self._ipfs_ip = ipfs_ip
         self._session = self._cluster.connect(self._keyspace)
+        self._session.default_timeout = timeout
         queries = self._create_tables_queries()
         for _, query in queries.items():
             self._session.execute(query)

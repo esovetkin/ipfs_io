@@ -7,7 +7,8 @@ class Cassandra_Base:
 
     def __init__(self, cluster_ips, keyspace,
                  replication = 'SimpleStrategy',
-                 replication_args = {'replication_factor': 1}):
+                 replication_args = {'replication_factor': 1},
+                 **kwargs):
         """Init keyspace
 
         :keyspace: name of the keyspace
@@ -27,7 +28,8 @@ class Cassandra_Base:
 
         self._cluster = Cluster\
             (contact_points=self._cluster_ips,
-             load_balancing_policy=DCAwareRoundRobinPolicy(local_dc='datacenter1'))
+             load_balancing_policy=DCAwareRoundRobinPolicy(local_dc='datacenter1'),
+             **kwargs)
         self.init_keyspace()
 
 
