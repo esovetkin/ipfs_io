@@ -180,14 +180,19 @@ class IPFS_Files(Cassandra_Base):
                        error = str(e)))
 
 
-    def upload(self, ifn, ipfs_fn):
+    def upload(self, ifn, ipfs_fn, timestamp = None):
         """Upload file to the ipfs storage
 
         :ifn: path to the local filename
 
         :ipfs_fn: filename in the ipfs storage
+
+        :timestamp: optionally set a timestamp of the file
+
         """
-        timestamp = str(time.time())
+        if not timestamp or \
+           not isinstance(timestamp,(int,float)):
+            timestamp = str(time.time())
         ipfs_cid = upload_ipfs(ifn = ifn,
                                ip = self._ipfs_ip)
 
