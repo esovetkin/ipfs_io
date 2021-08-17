@@ -27,18 +27,25 @@ class IPFS_Files(Cassandra_Base):
 
     """
 
-    def __init__(self, ipfs_ip, keyspace_suffix='',
+    def __init__(self, ipfs_ip,
+                 ipfs_cluster_ip = None,
+                 keyspace_suffix='',
                  timeout = 120,
                  **kwargs):
         """
+
         :keyspace_suffix: suffix of the keyspace
 
         :ipfs_ip: an ip address where ipfs/ipfs_cluster can be
         reached
 
+        :ipfs_cluster_ip: optionally specify ipfs_cluster ip. None
+        that use the same as ipfs_ip
+
         :timeout: cluster session default_timeout
 
         :kwargs: arguments passed to cassandra_base
+
         """
         if 'keyspace' not in kwargs:
             kwargs['keyspace'] = 'ipfs_files'
@@ -46,6 +53,10 @@ class IPFS_Files(Cassandra_Base):
         super().__init__(**kwargs)
 
         self._ipfs_ip = ipfs_ip
+        if ipfs_cluster_ip is None:
+            self._ipfs_cluster_ip = ipfs_ip
+        else:
+            self._ipfs_cluster_ip = ipfs_cluster_ip
         self._session = self._cluster.connect(self._keyspace)
         self._session.default_timeout = timeout
         queries = self._create_tables_queries()
@@ -194,7 +205,7 @@ class IPFS_Files(Cassandra_Base):
            not isinstance(timestamp,(int,float)):
             timestamp = str(time.time())
         ipfs_cid = upload_ipfs(ifn = ifn,
-                               ip = self._ipfs_ip)
+                               ip = self._ipfs_cluster_ip)
 
         self._session.execute\
             (self._queries['insert_files'],
@@ -213,4 +224,4 @@ class IPFS_Files(Cassandra_Base):
             (self._queries['delete_files'],
              [ipfs_fn])
 
-        unpin_ipfs(ipfs_cid, ip = self._ipfs_ip)
+        unpin_ipfs(ipfs_cid, ip = self._ipfs_cluster_ip)
