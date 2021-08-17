@@ -200,6 +200,7 @@ function start_ipfs {
 
     docommand=$(echo mkdir -p "${ipfs_storage}")
     docommand+=";"$(echo docker run -d \
+                          --user "$(id -u):$(id -g)" \
                           --name ipfs \
                           --memory "${docker_maxmemory}" \
                           $(get_restart) \
@@ -219,7 +220,8 @@ function set_private {
     res=$(echo mkdir -p "${ipfs_storage}")
     res+=";"$(echo cp "${ipfs_swarmkey}" "${ipfs_storage}/swarm.key")
     res+=";"$(echo docker run -d \
-                   -v "${ipfs_storage}:/data/ipfs" \
+                  --user "$(id -u):$(id -g)" \
+                  -v "${ipfs_storage}:/data/ipfs" \
                    ipfs/go-ipfs bootstrap rm --all)
 
     if [ ! -f "${bootstrap_ipfs}" ]
@@ -231,6 +233,7 @@ function set_private {
     while read line
     do
         res+=";"$(echo docker run -d \
+                       --user "$(id -u):$(id -g)" \
                        -v "${ipfs_storage}:/data/ipfs" \
                        ipfs/go-ipfs bootstrap add "${line}")
 
@@ -253,6 +256,7 @@ function start_ipfs_cluster {
     docommand=""
     docommand+=$(echo mkdir -p "${ipfs_cluster_config}")
     docommand+=";"$(echo docker run -d \
+                      --user "$(id -u):$(id -g)" \
                       --name ipfs_cluster \
                       --memory "${docker_maxmemory}" \
                       $(get_restart) \
