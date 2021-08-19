@@ -231,6 +231,22 @@ function start_ipfs {
 }
 
 
+function set_bootstrap_nodes {
+    res=""
+
+    while read line
+    do
+        res+=";"$(echo docker run -d \
+                       --user "$(id -u):$(id -g)" \
+                       -v "${ipfs_storage}:/data/ipfs" \
+                       ipfs/go-ipfs bootstrap add "${line}")
+
+    done <"${bootstrap_ipfs}"
+
+    echo "${res:1}"
+}
+
+
 function set_private {
     res=$(echo mkdir -p "${ipfs_storage}")
     res+=";"$(echo cp "${ipfs_swarmkey}" "${ipfs_storage}/swarm.key")
@@ -244,15 +260,6 @@ function set_private {
         echo "${res}"
         return 0
     fi
-
-    while read line
-    do
-        res+=";"$(echo docker run -d \
-                       --user "$(id -u):$(id -g)" \
-                       -v "${ipfs_storage}:/data/ipfs" \
-                       ipfs/go-ipfs bootstrap add "${line}")
-
-    done <"${bootstrap_ipfs}"
 
     echo "${res}"
 }
@@ -301,7 +308,9 @@ case "${what}" in
             docommand+=$(set_private)";"
         fi
 
-        docommand+=$(start_ipfs)
+        docommand+=$(set_bootstrap_nodes)
+
+        docommand+=";"$(start_ipfs)
         docommand+=";"$(start_ipfs_cluster)
         ;;
     stop)
