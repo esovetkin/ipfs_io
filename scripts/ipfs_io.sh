@@ -294,6 +294,10 @@ function start_ipfs_cluster {
 }
 
 
+function wait_for {
+    echo "while $1; do sleep 1; done"
+}
+
 set_defaults
 parse_args $@
 
@@ -311,6 +315,7 @@ case "${what}" in
         docommand+=$(set_bootstrap_nodes)
 
         docommand+=";"$(start_ipfs)
+        docommand+=";"$(wait_for "! docker logs ipfs | grep -q 'Daemon is ready'")
         docommand+=";"$(start_ipfs_cluster)
         ;;
     stop)
