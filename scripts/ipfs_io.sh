@@ -19,6 +19,7 @@ function set_defaults {
     ipfs_profile="server"
     ipfs_swarmkey="$(realpath secret/swarm.key)"
     ipfs_cluster_servicejson="$(realpath secret/service.json)"
+    ipfs_enable_gc="yes"
 }
 
 
@@ -72,6 +73,9 @@ function print_help {
     echo "  --ipfs-swarmkey   IPFS swarm key file path."
     echo "                    Leave empty if do not use it."
     echo "                    Default: \"${ipfs_swarmkey}\""
+    echo
+    echo "  --ipfs-enable-gc  if \"yes\" sets --enable-gc to ipfs"
+    echo "                    Default: \"${ipfs_enable_gc}\""
     echo
 }
 
@@ -135,6 +139,10 @@ function parse_args {
                 ipfs_swarmkey="${i#*=}"
                 shift
                 ;;
+            --ipfs-enable-gc=*)
+                ipfs_enable_gc="${i#*=}"
+                shift
+                ;;
             *)
                 echo "unknown argument!"
                 exit
@@ -190,12 +198,19 @@ function get_restart {
 
 
 function start_ipfs {
+    args=""
+    daemon_args=""
     ipaddress=$(get_ip "${network_interface}")
 
     # if private and no key, means we just init things
     if [ "${ipfs_private}" = "yes" ]
     then
         args+=" -e LIBP2P_FORCE_PNET=1"
+    fi
+
+    if [ "${ipfs_enable_gc}" = "yes" ]
+    then
+        daemon_args+=" --enable-gc"
     fi
 
     docommand=$(echo mkdir -p "${ipfs_storage}")
@@ -210,7 +225,7 @@ function start_ipfs {
                           -p "4001:4001" \
                           -p "${ipaddress}:8050:8080" \
                           -p "${ipaddress}:5001:5001" \
-                          ipfs/go-ipfs)
+                          ipfs/go-ipfs daemon ${daemon_args})
 
     echo "${docommand}"
 }
