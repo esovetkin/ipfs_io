@@ -247,6 +247,21 @@ function set_bootstrap_nodes {
 }
 
 
+function set_peering {
+    arr=()
+
+    peers=$(awk -F"/" '{print "{\""$7"\":""\""$1"/"$2"/"$3"/"$4"/"$5"\"}"}' \
+                secret/bootstrap_ipfs.list \
+                | jq -rcs 'map({"ID":keys[0],"Addrs":[.[]]})')
+
+    res=$(echo docker exec ipfs \
+               ipfs config --json \
+               Peering.Peers $(printf %q "${peers}"))
+
+    echo "${res}"
+}
+
+
 function set_private {
     res=$(echo mkdir -p "${ipfs_storage}")
     res+=";"$(echo cp "${ipfs_swarmkey}" "${ipfs_storage}/swarm.key")
@@ -316,6 +331,7 @@ case "${what}" in
 
         docommand+=";"$(start_ipfs)
         docommand+=";"$(wait_for "! docker logs ipfs | grep -q 'Daemon is ready'")
+        docommand+=";"$(set_peering)
         docommand+=";"$(start_ipfs_cluster)
         ;;
     stop)
