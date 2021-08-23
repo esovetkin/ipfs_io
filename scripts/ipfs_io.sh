@@ -15,7 +15,7 @@ function set_defaults {
     ifrestart="yes"
     ipfs_storage="$(realpath ./ipfs_storage/ipfs)"
     ipfs_cluster_config="$(realpath ./ipfs_storage/cluster)"
-    ipfs_private="yes"
+    ipfs_private="no"
     ipfs_profile="server"
     ipfs_swarmkey="$(realpath secret/swarm.key)"
     ipfs_cluster_servicejson="$(realpath secret/service.json)"
