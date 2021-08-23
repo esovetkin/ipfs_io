@@ -213,7 +213,6 @@ function start_ipfs {
         daemon_args+=" --enable-gc"
     fi
 
-    docommand=$(echo mkdir -p "${ipfs_storage}")
     docommand+=";"$(echo docker run -d \
                           --user "$(id -u):$(id -g)" \
                           --name ipfs \
@@ -290,21 +289,20 @@ function start_ipfs_cluster {
         clusterargs="daemon --bootstrap $(tr '\n' ',' < ${bootstrap_cluster} | sed 's/,*$//')"
     fi
 
-    docommand=""
-    docommand+=$(echo mkdir -p "${ipfs_cluster_config}")
-    docommand+=";"$(echo docker run -d \
-                      --user "$(id -u):$(id -g)" \
-                      --name ipfs_cluster \
-                      --memory "${docker_maxmemory}" \
-                      $(get_restart) \
-                      -v "${ipfs_cluster_config}:/data/ipfs-cluster" \
-                      -e "CLUSTER_SECRET=${cluster_secret}" \
-                      -e "CLUSTER_RESTAPI_HTTPLISTENMULTIADDRESS=/ip4/0.0.0.0/tcp/9094" \
-                      -e "CLUSTER_IPFSHTTP_NODEMULTIADDRESS=/ip4/${ipaddress}/tcp/5001" \
-                      -p "${ipaddress}:9096:9096" \
-                      -p "${ipaddress}:9094:9094" \
-                      ipfs/ipfs-cluster:latest \
-                      ${clusterargs})
+    docommand=$(echo docker run -d \
+                     --user "$(id -u):$(id -g)" \
+                     --name ipfs_cluster \
+                     --memory "${docker_maxmemory}" \
+                     $(get_restart) \
+                     -v "${ipfs_cluster_config}:/data/ipfs-cluster" \
+                     -e "CLUSTER_SECRET=${cluster_secret}" \
+                     -e "CLUSTER_RESTAPI_HTTPLISTENMULTIADDRESS=/ip4/0.0.0.0/tcp/9094" \
+                     -e "CLUSTER_IPFSHTTP_NODEMULTIADDRESS=/ip4/${ipaddress}/tcp/5001" \
+                     -p "${ipaddress}:9096:9096" \
+                     -p "${ipaddress}:9094:9094" \
+                     ipfs/ipfs-cluster:latest \
+                     ${clusterargs})
+
     echo "${docommand}"
 }
 
@@ -320,7 +318,8 @@ case "${what}" in
     start)
         # determine the docommand
         prune_byname ipfs
-        docommand=""
+        docommand=$(echo mkdir -p "${ipfs_storage}")
+        docommand+=";"$(echo mkdir -p "${ipfs_cluster_config}")";"
 
         if [ "${ipfs_private}" = "yes" ] && [ ! -f "${ipfs_storage}/swarm.key" ]
         then
