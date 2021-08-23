@@ -9,8 +9,8 @@ function set_defaults {
     docker_maxmemory=$(echo "scale=2; $(grep MemTotal /proc/meminfo | awk '{print $2}')/1024/1024*0.2" \
                            | bc | awk '{printf "%.2f", $0}')"g"
     what="start"
-    bootstrap_ipfs="$(realpath ./bootstrap_ipfs.list)"
-    bootstrap_cluster="$(realpath ./bootstrap_cluster.list)"
+    bootstrap_ipfs="$(realpath ./secret/bootstrap_ipfs.list)"
+    bootstrap_cluster="$(realpath ./secret/bootstrap_cluster.list)"
     ifdry="no"
     ifrestart="yes"
     ipfs_storage="$(realpath ./ipfs_storage/ipfs)"
