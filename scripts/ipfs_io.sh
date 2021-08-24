@@ -280,11 +280,10 @@ function set_peering {
 
 
 function set_private {
-    res=$(echo mkdir -p "${ipfs_storage}")
-    res+=";"$(echo cp "${ipfs_swarmkey}" "${ipfs_storage}/swarm.key")
+    res=$(echo cp "${ipfs_swarmkey}" "${ipfs_storage}/swarm.key")
     res+=";"$(echo docker run -d \
-                  --user "$(id -u):$(id -g)" \
-                  -v "${ipfs_storage}:/data/ipfs" \
+                   --user "$(id -u):$(id -g)" \
+                   -v "${ipfs_storage}:/data/ipfs" \
                    ipfs/go-ipfs bootstrap rm --all)
 
     if [ ! -f "${bootstrap_ipfs}" ]
@@ -335,19 +334,19 @@ function start_ipfs_cluster {
         clusterargs="daemon --bootstrap $(tr '\n' ',' < ${bootstrap_cluster} | sed 's/,*$//')"
     fi
 
-    docommand=$(echo docker run -d \
-                     --user "$(id -u):$(id -g)" \
-                     --name ipfs_cluster \
-                     --memory "${docker_maxmemory}" \
-                     $(get_restart) \
-                     -v "${ipfs_cluster_config}:/data/ipfs-cluster" \
-                     -e "CLUSTER_SECRET=${cluster_secret}" \
-                     -e "CLUSTER_RESTAPI_HTTPLISTENMULTIADDRESS=/ip4/0.0.0.0/tcp/9094" \
-                     -e "CLUSTER_IPFSHTTP_NODEMULTIADDRESS=/ip4/${ipaddress}/tcp/5001" \
-                     -p "${ipaddress}:9096:9096" \
-                     -p "${ipaddress}:9094:9094" \
-                     ipfs/ipfs-cluster:latest \
-                     ${clusterargs})
+    docommand+=$(echo docker run -d \
+                      --user "$(id -u):$(id -g)" \
+                      --name ipfs_cluster \
+                      --memory "${docker_maxmemory}" \
+                      $(get_restart) \
+                      -v "${ipfs_cluster_config}:/data/ipfs-cluster" \
+                      -e "CLUSTER_SECRET=${cluster_secret}" \
+                      -e "CLUSTER_RESTAPI_HTTPLISTENMULTIADDRESS=/ip4/0.0.0.0/tcp/9094" \
+                      -e "CLUSTER_IPFSHTTP_NODEMULTIADDRESS=/ip4/${ipaddress}/tcp/5001" \
+                      -p "${ipaddress}:9096:9096" \
+                      -p "${ipaddress}:9094:9094" \
+                      ipfs/ipfs-cluster:latest \
+                      ${clusterargs})
 
     echo "${docommand}"
 }
@@ -365,15 +364,14 @@ case "${what}" in
         # determine the docommand
         prune_byname ipfs
         docommand=$(echo mkdir -p "${ipfs_storage}")
-        docommand+=";"$(echo mkdir -p "${ipfs_cluster_config}")";"
+        docommand+=";"$(echo mkdir -p "${ipfs_cluster_config}")
 
         if [ "${ipfs_private}" = "yes" ] && [ ! -f "${ipfs_storage}/swarm.key" ]
         then
-            docommand+=$(set_private)";"
+            docommand+=";"$(set_private)
         fi
 
-        docommand+=$(set_bootstrap_nodes)
-
+        docommand+=";"$(set_bootstrap_nodes)
         docommand+=";"$(start_ipfs)
         docommand+=";"$(wait_for "! docker logs ipfs | grep -q 'Daemon is ready'")
         docommand+=";"$(set_peering)
