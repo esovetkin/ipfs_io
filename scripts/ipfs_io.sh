@@ -356,6 +356,20 @@ function wait_for {
     echo "while $1; do sleep 1; done"
 }
 
+
+function check_which {
+    for i in $@
+    do
+        if ! which $i &> /dev/null
+        then
+            echo "$i binary is missing! Exiting..."
+            exit
+        fi
+    done
+}
+
+
+check_which bc jq awk
 set_defaults
 parse_args $@
 
