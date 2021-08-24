@@ -20,6 +20,8 @@ function set_defaults {
     ipfs_swarmkey="$(realpath secret/swarm.key)"
     ipfs_cluster_servicejson="$(realpath secret/service.json)"
     ipfs_enable_gc="yes"
+    rmax="3"
+    rmin="2"
 }
 
 
@@ -76,6 +78,14 @@ function print_help {
     echo
     echo "  --ipfs-enable-gc  if \"yes\" sets --enable-gc to ipfs"
     echo "                    Default: \"${ipfs_enable_gc}\""
+    echo
+    echo "  --ipfs-cluster-rmax"
+    echo "                    Maximum replication setting for the ipfs cluster"
+    echo "                    Default: \"${rmax}\""
+    echo
+    echo "  --ipfs-cluster-rmin"
+    echo "                    Minimum replication setting for the ipfs cluster"
+    echo "                    Default: \"${rmin}\""
     echo
 }
 
@@ -141,6 +151,14 @@ function parse_args {
                 ;;
             --ipfs-enable-gc=*)
                 ipfs_enable_gc="${i#*=}"
+                shift
+                ;;
+            --ipfs-cluster-rmax=*)
+                rmax=="${i#*=}"
+                shift
+                ;;
+            --ipfs-cluster-rmin=*)
+                rmin=="${i#*=}"
                 shift
                 ;;
             *)
@@ -279,9 +297,37 @@ function set_private {
 }
 
 
+function set_ipfs_cluster_config {
+    config="$1"
+    peers=$(awk -F'/' \
+                '{print "\""$7"\""}' \
+                "${bootstrap_cluster}" \
+                | jq -cs '.')
+    res=$(echo jq \
+               --argjson peers $(printf %q "${peers}") \
+               --argjson rmax "${rmax}" \
+               --argjson rmin "${rmin}" \
+               $(printf %q '.consensus.crdt.trusted_peers = $peers |
+                            .cluster.replication_factor_min = $rmin |
+                            .cluster.replication_factor_max = $rmax') \
+               "${config}" \> "${config}.temp")
+    res+=";"$(echo mv "${config}.temp" "${config}")";"
+
+    echo "${res}"
+}
+
+
 function start_ipfs_cluster {
+    docommand=""
     ipaddress=$(get_ip "${network_interface}")
     cluster_secret=$(jq -r '.cluster.secret' "${ipfs_cluster_servicejson}")
+
+    # set trusted peers
+    config="${ipfs_cluster_config}/service.json"
+    if [ -f "${config}" ]
+    then
+        docommand+=$(set_ipfs_cluster_config "${config}")
+    fi
 
     clusterargs=""
     if [ -f "${bootstrap_cluster}" ]
