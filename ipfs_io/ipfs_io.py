@@ -1,3 +1,4 @@
+import os
 import logging
 import subprocess
 
@@ -44,6 +45,8 @@ def download_ipfs(ipfs_cid, ofn, ip='127.0.0.1', port='5001'):
 
     :return: nothing
     """
+    os.makedirs(os.path.dirname(ofn), exist_ok = True)
+
     cmd = ['ipfs',
            '--api','/ip4/{ip}/tcp/{port}'\
            .format(ip=ip, port=port),
