@@ -32,7 +32,8 @@ def _run_command(cmd):
                             stderr = res.stderr.decode()))
 
 
-def download_ipfs(ipfs_cid, ofn, ip='127.0.0.1', port='5001'):
+def download_ipfs(ipfs_cid, ofn, ip='127.0.0.1', port='5001',
+                  timeout = 600):
     """Download a file from ipfs
 
     :ipfs_cid: cid of a file in ipfs
@@ -43,11 +44,14 @@ def download_ipfs(ipfs_cid, ofn, ip='127.0.0.1', port='5001'):
 
     :port: port of API of ipfs daemon
 
+    :timeout: timeout in seconds for download a file
+
     :return: nothing
     """
     os.makedirs(os.path.dirname(ofn), exist_ok = True)
 
     cmd = ['ipfs',
+           '--timeout={}s'.format(timeout),
            '--api','/ip4/{ip}/tcp/{port}'\
            .format(ip=ip, port=port),
            'get', ipfs_cid, '-o',ofn]
