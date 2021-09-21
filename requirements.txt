@@ -1,4 +1,4 @@
-cassandra-driver<=3.24.0
+cassandra-driver
 numpy
 tqdm
 pytest
