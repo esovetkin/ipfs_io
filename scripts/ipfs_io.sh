@@ -5,7 +5,7 @@ cd $(git rev-parse --show-toplevel)
 
 
 function set_defaults {
-    network_interface="pvgrip"
+    network_interface="hs_pvgrip"
     docker_maxmemory=$(echo "scale=2; $(grep MemTotal /proc/meminfo | awk '{print $2}')/1024/1024*0.2" \
                            | bc | awk '{printf "%.2f", $0}')"g"
     what="start"
