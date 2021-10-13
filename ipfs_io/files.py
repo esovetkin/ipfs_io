@@ -212,6 +212,24 @@ class IPFS_Files(Cassandra_Base):
              (ipfs_fn, timestamp, ipfs_cid))
 
 
+    def link(self, src, dst, timestamp = None):
+        """Links one file to another in the ipfs storage
+
+        :src,dst: source and destination filename in the ipfs stoage
+
+        :timestamp: optionally set a timestamp of the file
+
+        """
+        if not timestamp or \
+           not isinstance(timestamp,(int,float)):
+            timestamp = str(time.time())
+
+        ipfs_cid = self._get_ipfs_cid(src)
+        self._session.execute\
+            (self._queries['insert_files'],
+             (dst, timestamp, ipfs_cid))
+
+
     def delete(self, ipfs_fn):
         """Delete file from the ipfs storage
 
