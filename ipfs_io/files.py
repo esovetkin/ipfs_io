@@ -8,9 +8,8 @@ from ipfs_io.ipfs_io \
     import download_ipfs, \
     upload_ipfs, unpin_ipfs
 
-
-class FAILED_FILE(Exception):
-    pass
+from ipfs_io.exceptions \
+    import FAILED_FILE, FAILED_METADATA
 
 
 class IPFS_Files(Cassandra_Base):
@@ -132,17 +131,31 @@ class IPFS_Files(Cassandra_Base):
 
 
     def __contains__(self, ipfs_fn):
-        res = self._session.execute\
-            (self._queries['select_contains'],
-             [ipfs_fn]).one()[0]
+        try:
+            res = self._session.execute\
+                (self._queries['select_contains'],
+                 [ipfs_fn]).one()[0]
+        except Exception as e:
+            raise FAILED_METADATA("""Failed cassandra query!
+            query = select_contains
+            ipfs_fn = {}
+            error = {}
+            """.format(ipfs_fn, e)) from e
 
         return res != 0
 
 
     def get_timestamp(self, ipfs_fn):
-        res = self._session.execute\
-            (self._queries['select_timestamp'],
-             [ipfs_fn]).one()
+        try:
+            res = self._session.execute\
+                (self._queries['select_timestamp'],
+                 [ipfs_fn]).one()
+        except Exception as e:
+            raise FAILED_METADATA("""Failed cassandra query!
+            query = select_timestamp
+            ipfs_fn = {}
+            error = {}
+            """.format(ipfs_fn, e)) from e
 
         if res is None:
             return res
@@ -151,9 +164,16 @@ class IPFS_Files(Cassandra_Base):
 
 
     def _get_ipfs_cid(self, ipfs_fn):
-        ipfs_cid = self._session.execute\
-            (self._queries['select_ipfs_cid'],
-             [ipfs_fn]).one()
+        try:
+            ipfs_cid = self._session.execute\
+                (self._queries['select_ipfs_cid'],
+                 [ipfs_fn]).one()
+        except Exception as e:
+            raise FAILED_METADATA("""Failed cassandra query!
+            query = select_ipfs_cid
+            ipfs_fn = {}
+            error = {}
+            """.format(ipfs_fn, e)) from e
 
         if ipfs_cid is None:
             raise RuntimeError\
@@ -188,7 +208,7 @@ class IPFS_Files(Cassandra_Base):
             """.format(ipfs_ip = self._ipfs_ip,
                        ofn = ofn,
                        ipfs_cid = ipfs_cid,
-                       error = str(e)))
+                       error = str(e))) from e
 
 
     def upload(self, ifn, ipfs_fn, timestamp = None):
@@ -207,9 +227,18 @@ class IPFS_Files(Cassandra_Base):
         ipfs_cid = upload_ipfs(ifn = ifn,
                                ip = self._ipfs_cluster_ip)
 
-        self._session.execute\
-            (self._queries['insert_files'],
-             (ipfs_fn, timestamp, ipfs_cid))
+        try:
+            self._session.execute\
+                (self._queries['insert_files'],
+                 (ipfs_fn, timestamp, ipfs_cid))
+        except Exception as e:
+            raise FAILED_METADATA("""Failed cassandra query!
+            query = insert_files
+            ipfs_fn = {}
+            timestamp = {}
+            ipfs_cid = {}
+            error = {}
+            """.format(ipfs_fn, timestamp, ipfs_cid, e)) from e
 
 
     def link(self, src, dst, timestamp = None):
@@ -225,9 +254,19 @@ class IPFS_Files(Cassandra_Base):
             timestamp = str(time.time())
 
         ipfs_cid = self._get_ipfs_cid(src)
-        self._session.execute\
-            (self._queries['insert_files'],
-             (dst, timestamp, ipfs_cid))
+
+        try:
+            self._session.execute\
+                (self._queries['insert_files'],
+                 (dst, timestamp, ipfs_cid))
+        except Exception as e:
+            raise FAILED_METADATA("""Failed cassandra query!
+            query = insert_files
+            ipfs_fn = {}
+            timestamp = {}
+            ipfs_cid = {}
+            error = {}
+            """.format(ipfs_fn, timestamp, ipfs_cid, e)) from e
 
 
     def delete(self, ipfs_fn):
@@ -238,8 +277,15 @@ class IPFS_Files(Cassandra_Base):
         """
         ipfs_cid = self._get_ipfs_cid(ipfs_fn)
 
-        self._session.execute\
-            (self._queries['delete_files'],
-             [ipfs_fn])
+        try:
+            self._session.execute\
+                (self._queries['delete_files'],
+                 [ipfs_fn])
+        except Exception as e:
+            raise FAILED_METADATA("""Failed cassandra query!
+            query = delete_files
+            ipfs_fn = {}
+            error = {}
+            """.format(ipfs_fn, e)) from e
 
         unpin_ipfs(ipfs_cid, ip = self._ipfs_cluster_ip)
