@@ -29,7 +29,8 @@ class IPFS_Files(Cassandra_Base):
     def __init__(self, ipfs_ip,
                  ipfs_cluster_ip = None,
                  keyspace_suffix='',
-                 timeout = 120,
+                 cassandra_timeout = 120,
+                 ipfs_timeout = 2400,
                  **kwargs):
         """
 
@@ -41,7 +42,9 @@ class IPFS_Files(Cassandra_Base):
         :ipfs_cluster_ip: optionally specify ipfs_cluster ip. None
         that use the same as ipfs_ip
 
-        :timeout: cluster session default_timeout
+        :cassandra_timeout: cluster session default_timeout
+
+        :ipfs_timeout: global timeout for ipfs command
 
         :kwargs: arguments passed to cassandra_base
 
@@ -56,8 +59,9 @@ class IPFS_Files(Cassandra_Base):
             self._ipfs_cluster_ip = ipfs_ip
         else:
             self._ipfs_cluster_ip = ipfs_cluster_ip
+        self._ipfs_timeout = ipfs_timeout
         self._session = self._cluster.connect(self._keyspace)
-        self._session.default_timeout = timeout
+        self._session.default_timeout = cassandra_timeout
         queries = self._create_tables_queries()
         for _, query in queries.items():
             self._session.execute(query)
@@ -197,7 +201,8 @@ class IPFS_Files(Cassandra_Base):
         try:
             download_ipfs(ipfs_cid = ipfs_cid,
                           ofn = ofn,
-                          ip = self._ipfs_ip)
+                          ip = self._ipfs_ip,
+                          timeout = self._ipfs_timeout)
         except Exception as e:
             raise FAILED_FILE("""
             Cannot download a file!
