@@ -93,6 +93,12 @@ class IPFS_Files(Cassandra_Base):
         VALUES (%s, %s, %s)
         IF NOT EXISTS"""
 
+        res['update_timestamp'] = """
+            UPDATE files
+            SET timestamp=%s
+            WHERE filename=%s
+            IF EXISTS"""
+
         return res
 
 
@@ -165,6 +171,21 @@ class IPFS_Files(Cassandra_Base):
             return res
 
         return float(res[0])
+
+
+    def update_timestamp(self, ipfs_fn):
+        try:
+            self._session.execute\
+                (self._queries['update_timestamp'],
+                 (str(time.time()),ipfs_fn))
+        except Exception as e:
+            raise FAILED_METADATA("""Failed cassandra query!
+            query = update_timestamp
+            ipfs_fn = {}
+            error = {}
+            """.format(ipfs_fn, e)) from e
+
+        return True
 
 
     def _get_ipfs_cid(self, ipfs_fn):
