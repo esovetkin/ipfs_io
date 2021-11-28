@@ -251,12 +251,16 @@ class IPFS_Files(Cassandra_Base):
 
         :src,dst: source and destination filename in the ipfs stoage
 
-        :timestamp: optionally set a timestamp of the file
+        :timestamp: optionally set specific timestamp. If None,
+        timestamp is not set. If '-1' timestamp of the source is
 
         """
         if not timestamp or \
            not isinstance(timestamp,(int,float)):
             timestamp = str(time.time())
+
+        if -1 == timestamp:
+            timestamp = self.get_timestamp(src)
 
         ipfs_cid = self._get_ipfs_cid(src)
 
